@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Desigualdades Lineales y Cuadráticas</title>
+  <title>Desigualdades Lineales y Polinómicas</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
@@ -91,13 +91,13 @@
   <div class="form-row">
     <select id="tipo">
       <option value="lineal">Lineal (ax + b)</option>
-      <option value="cuadratica">Cuadrática (ax² + bx + c)</option>
-      <option value="cuadratica">Cuadrática (ax² - bx + c)</option>
+      <option value="cuadratica">Polinómica (axⁿ + bx + c)</option>
     </select>
 
     <input type="number" id="a" placeholder="Coef. a">
     <input type="number" id="b" placeholder="Coef. b">
     <input type="number" id="c" placeholder="Coef. c" style="display: none;">
+    <input type="number" id="exponente" placeholder="Exponente (n)" style="display: none;">
 
     <select id="operador">
       <option value=">">></option>
@@ -120,9 +120,12 @@
 <script>
   const tipo = document.getElementById('tipo');
   const cInput = document.getElementById('c');
+  const expInput = document.getElementById('exponente');
 
   tipo.addEventListener('change', () => {
-    cInput.style.display = tipo.value === 'cuadratica' ? 'inline-block' : 'none';
+    const esCuadratica = tipo.value === 'cuadratica';
+    cInput.style.display = esCuadratica ? 'inline-block' : 'none';
+    expInput.style.display = esCuadratica ? 'inline-block' : 'none';
   });
 
   function resolver() {
@@ -132,69 +135,71 @@
     const operador = document.getElementById("operador").value;
     const valor = parseFloat(document.getElementById("valor").value);
     const resultado = document.getElementById("resultado");
+    const exponente = parseInt(document.getElementById("exponente").value) || 2;
 
     let solucion = "";
     let puntos = [];
 
     if (tipo.value === "lineal") {
-      // ax + b ? valor → ax + b - valor ? 0
       const nuevaB = b - valor;
       const xCritico = -nuevaB / a;
+      const xRedondeado = parseFloat(xCritico.toPrecision(4));
 
-      if (operador === ">") solucion = a > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
-      else if (operador === ">=") solucion = a > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
-      else if (operador === "<") solucion = a > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
-      else if (operador === "<=") solucion = a > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
-
-      puntos = [xCritico];
+      if (operador === ">") solucion = a > 0 ? `x > ${xRedondeado}` : `x < ${xRedondeado}`;
+      else if (operador === ">=") solucion = a > 0 ? `x ≥ ${xRedondeado}` : `x ≤ ${xRedondeado}`;
+      else if (operador === "<") solucion = a > 0 ? `x < ${xRedondeado}` : `x > ${xRedondeado}`;
+      else if (operador === "<=") solucion = a > 0 ? `x ≤ ${xRedondeado}` : `x ≥ ${xRedondeado}`;
     } else {
-      // ax² + bx + c ? valor → ax² + bx + c - valor ? 0
       const nuevaC = c - valor;
-      const discriminante = b * b - 4 * a * nuevaC;
 
-      if (discriminante < 0) {
-        solucion = (a > 0 && (operador === ">" || operador === ">=")) ||
-                   (a < 0 && (operador === "<" || operador === "<="))
-                   ? "Solución: todos los reales"
-                   : "Sin solución real";
+      if (exponente !== 2) {
+        solucion = `Por ahora solo se resuelven polinomios de grado 2 (cuadráticos), pero sí se pueden graficar.`;
       } else {
-        const x1 = (-b - Math.sqrt(discriminante)) / (2 * a);
-        const x2 = (-b + Math.sqrt(discriminante)) / (2 * a);
-        const izquierda = Math.min(x1, x2).toFixed(4);
-        const derecha = Math.max(x1, x2).toFixed(4);
-        puntos = [parseFloat(izquierda), parseFloat(derecha)];
+        const discriminante = b * b - 4 * a * nuevaC;
 
-        if (operador === ">") {
-          solucion = a > 0
-            ? `x < ${izquierda} o x > ${derecha}`
-            : `x entre ${izquierda} y ${derecha}`;
-        } else if (operador === ">=") {
-          solucion = a > 0
-            ? `x ≤ ${izquierda} o x ≥ ${derecha}`
-            : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
-        } else if (operador === "<") {
-          solucion = a > 0
-            ? `x entre ${izquierda} y ${derecha}`
-            : `x < ${izquierda} o x > ${derecha}`;
-        } else if (operador === "<=") {
-          solucion = a > 0
-            ? `x entre ${izquierda} y ${derecha} (incluye extremos)`
-            : `x ≤ ${izquierda} o x ≥ ${derecha}`;
+        if (discriminante < 0) {
+          solucion = (a > 0 && (operador === ">" || operador === ">=")) ||
+                     (a < 0 && (operador === "<" || operador === "<="))
+                     ? "Solución: todos los reales"
+                     : "Sin solución real";
+        } else {
+          const x1 = (-b - Math.sqrt(discriminante)) / (2 * a);
+          const x2 = (-b + Math.sqrt(discriminante)) / (2 * a);
+          const izquierda = Math.min(x1, x2).toPrecision(4);
+          const derecha = Math.max(x1, x2).toPrecision(4);
+          puntos = [parseFloat(izquierda), parseFloat(derecha)];
+
+          if (operador === ">") {
+            solucion = a > 0
+              ? `x < ${izquierda} o x > ${derecha}`
+              : `x entre ${izquierda} y ${derecha}`;
+          } else if (operador === ">=") {
+            solucion = a > 0
+              ? `x ≤ ${izquierda} o x ≥ ${derecha}`
+              : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
+          } else if (operador === "<") {
+            solucion = a > 0
+              ? `x entre ${izquierda} y ${derecha}`
+              : `x < ${izquierda} o x > ${derecha}`;
+          } else if (operador === "<=") {
+            solucion = a > 0
+              ? `x entre ${izquierda} y ${derecha} (incluye extremos)`
+              : `x ≤ ${izquierda} o x ≥ ${derecha}`;
+          }
         }
       }
     }
 
     resultado.innerHTML = `<span style="color: green;">${solucion}</span>`;
-    graficar(a, b, c, valor, operador);
+    graficar(a, b, c, valor, operador, tipo.value, exponente);
   }
 
-  function graficar(a, b, c, valor, operador) {
-    const tipoDesig = tipo.value;
+  function graficar(a, b, c, valor, operador, tipoDesig, exp) {
     const x = [], y = [], region = [];
 
     for (let i = -20; i <= 20; i += 0.1) {
       x.push(i);
-      let fx = tipoDesig === "lineal" ? a * i + b : a * i * i + b * i + c;
+      let fx = tipoDesig === "lineal" ? a * i + b : a * Math.pow(i, exp) + b * i + c;
       y.push(fx);
 
       let cumple = false;
@@ -234,3 +239,4 @@
 
 </body>
 </html>
+
