@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Resolver Desigualdades</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+    #resultado {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Resolver Desigualdades Lineales y Cuadráticas</h1>
+  <p>Ingresa una desigualdad como: <code>2*x - 3 &lt; 5</code> o <code>x^2 - 4 &gt; 0</code></p>
+  <input type="text" id="desigualdad" placeholder="Ej: x^2 - 4 > 0">
+  <button onclick="resolver()">Resolver</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    function resolver() {
+      const input = document.getElementById("desigualdad").value;
+      const resultado = document.getElementById("resultado");
+
+      try {
+        const operadores = ['<', '>', '<=', '>='];
+        let operador = operadores.find(op => input.includes(op));
+        if (!operador) throw new Error("Desigualdad inválida");
+
+        const [lhs, rhs] = input.split(operador).map(e => math.simplify(e.trim()));
+        const expr = math.simplify(`${lhs} - (${rhs})`);
+
+        let exprStr = expr.toString();
+        let coef = math.simplify(exprStr).coefficients('x');
+        let grado = math.simplify(exprStr).degree('x');
+
+        let solucion = "";
+
+        if (grado === 1) {
+          // Lineal: ax + b > 0
+          let a = math.derivative(exprStr, 'x').evaluate();
+          let b = expr.evaluate({ x: 0 });
+          let xCritico = -b / a;
+
+          if (operador === '>') {
+            solucion = a > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
+          } else if (operador === '>=') {
+            solucion = a > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
+          } else if (operador === '<') {
+            solucion = a > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
+          } else if (operador === '<=') {
+            solucion = a > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
+          }
+
+        } else if (grado === 2) {
+          // Cuadrática: ax^2 + bx + c > 0
+          const a = math.derivative(math.derivative(exprStr, 'x').toString(), 'x').evaluate() / 2;
+          const b = math.derivative(exprStr, 'x').evaluate({ x: 0 });
+          const c = expr.evaluate({ x: 0 });
+
+          const discriminante = b * b - 4 * a * c;
+
+          if (discriminante < 0) {
+            if ((a > 0 && (operador === '>' || operador === '>=')) ||
+                (a < 0 && (operador === '<' || operador === '<='))) {
+              solucion = "Todos los valores reales";
+            } else {
+              solucion = "Ningún valor real";
+            }
+          } else {
+            const x1 = (-b - Math.sqrt(discriminante)) / (2 * a);
+            const x2 = (-b + Math.sqrt(discriminante)) / (2 * a);
+            const izquierda = Math.min(x1, x2);
+            const derecha = Math.max(x1, x2);
+
+            if (operador === '>') {
+              solucion = a > 0
+                ? `x < ${izquierda} o x > ${derecha}`
+                : `x entre ${izquierda} y ${derecha} (sin incluir extremos)`;
+            } else if (operador === '>=') {
+              solucion = a > 0
+                ? `x ≤ ${izquierda} o x ≥ ${derecha}`
+                : `x entre ${izquierda} y ${derecha} (incluyendo extremos)`;
+            } else if (operador === '<') {
+              solucion = a < 0
+                ? `x < ${izquierda} o x > ${derecha}`
+                : `x entre ${izquierda} y ${derecha} (sin incluir extremos)`;
+            } else if (operador === '<=') {
+              solucion = a < 0
+                ? `x ≤ ${izquierda} o x ≥ ${derecha}`
+                : `x entre ${izquierda} y ${derecha} (incluyendo extremos)`;
+            }
+          }
+        } else {
+          solucion = "Solo se admiten desigualdades de grado 1 o 2.";
+        }
+
+        resultado.innerHTML = `Solución aproximada: <br><span style="color: green;">${solucion}</span>`;
+      } catch (err) {
+        resultado.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
