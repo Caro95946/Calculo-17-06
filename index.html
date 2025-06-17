@@ -2,208 +2,259 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Resolver y Graficar Desigualdades</title>
+  <title>Desigualdades Lineales y Cuadráticas</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 700px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+      padding: 40px;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 30px;
+      max-width: 800px;
       margin: auto;
     }
-    input, select, button {
-      padding: 10px;
-      margin: 5px 0;
-      width: 100%;
-      max-width: 400px;
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #007bff;
     }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    select, input {
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 150px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
     #resultado {
       margin-top: 20px;
       font-weight: bold;
+      text-align: center;
+      font-size: 1.1em;
     }
+
     #grafica {
-      margin-top: 30px;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      select, input {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h2>Resolver y Graficar Desigualdades</h2>
+<div class="container">
+  <h2>Calculadora de Desigualdades</h2>
 
-  <label for="tipo">Tipo de función:</label>
-  <select id="tipo">
-    <option value="lineal">Lineal (ax + b)</option>
-    <option value="cuadratica">Cuadrática (ax² + bx + c)</option>
-  </select>
+  <div class="form-row">
+    <select id="tipo">
+      <option value="lineal">Lineal (ax + b)</option>
+      <option value="cuadratica">Cuadrática (ax² + bx + c)</option>
+    </select>
 
-  <div>
-    <label>Coeficiente a:</label>
-    <input type="number" id="a" placeholder="a (por ejemplo, 2)">
-    <label>Coeficiente b:</label>
-    <input type="number" id="b" placeholder="b (por ejemplo, -3)">
-    <label id="cLabel" style="display:none;">Coeficiente c:</label>
-    <input type="number" id="c" placeholder="c (por ejemplo, -4)" style="display:none;">
+    <input type="number" id="a" placeholder="Coef. a">
+    <input type="number" id="b" placeholder="Coef. b">
+    <input type="number" id="c" placeholder="Coef. c" style="display: none;">
+
+    <select id="operador">
+      <option value=">">></option>
+      <option value=">=">>=</option>
+      <option value="<"><</option>
+      <option value="<="><=</option>
+    </select>
+
+    <input type="number" id="valor" placeholder="Comparar con...">
   </div>
 
-  <label>Operador:</label>
-  <select id="operador">
-    <option value=">">></option>
-    <option value=">=">>=</option>
-    <option value="<"><</option>
-    <option value="<="><=</option>
-  </select>
-
-  <label>Comparado con:</label>
-  <input type="number" id="valor" placeholder="Valor (por ejemplo, 0)">
-
-  <button onclick="resolver()">Resolver</button>
+  <div class="form-row">
+    <button onclick="resolver()">Resolver</button>
+  </div>
 
   <div id="resultado"></div>
   <div id="grafica"></div>
+</div>
 
-  <script>
-    const tipo = document.getElementById('tipo');
-    const cInput = document.getElementById('c');
-    const cLabel = document.getElementById('cLabel');
+<script>
+  const tipo = document.getElementById('tipo');
+  const cInput = document.getElementById('c');
 
-    tipo.addEventListener('change', () => {
-      if (tipo.value === 'cuadratica') {
-        cInput.style.display = 'inline-block';
-        cLabel.style.display = 'inline-block';
-      } else {
-        cInput.style.display = 'none';
-        cLabel.style.display = 'none';
+  tipo.addEventListener('change', () => {
+    if (tipo.value === 'cuadratica') {
+      cInput.style.display = 'inline-block';
+    } else {
+      cInput.style.display = 'none';
+    }
+  });
+
+  function resolver() {
+    const a = parseFloat(document.getElementById("a").value);
+    const b = parseFloat(document.getElementById("b").value);
+    const c = parseFloat(document.getElementById("c").value) || 0;
+    const operador = document.getElementById("operador").value;
+    const valor = parseFloat(document.getElementById("valor").value);
+    const resultado = document.getElementById("resultado");
+
+    let expr;
+    const tipoFunc = tipo.value;
+
+    if (tipoFunc === "lineal") {
+      expr = `(${a})*x + (${b}) - (${valor})`;
+    } else {
+      expr = `(${a})*x^2 + (${b})*x + (${c}) - (${valor})`;
+    }
+
+    const simplified = math.simplify(expr);
+    const grado = simplified.degree('x');
+    const evaluado = simplified.toString();
+    let solucion = "", puntos = [];
+
+    if (grado === 1) {
+      const coef = math.derivative(evaluado, 'x').evaluate();
+      const constante = math.evaluate(evaluado, { x: 0 });
+      const xCritico = -constante / coef;
+
+      if (operador === '>') {
+        solucion = coef > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
+      } else if (operador === '>=') {
+        solucion = coef > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
+      } else if (operador === '<') {
+        solucion = coef > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
+      } else if (operador === '<=') {
+        solucion = coef > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
       }
-    });
 
-    function resolver() {
-      const a = parseFloat(document.getElementById("a").value);
-      const b = parseFloat(document.getElementById("b").value);
-      const c = parseFloat(document.getElementById("c").value) || 0;
-      const operador = document.getElementById("operador").value;
-      const valor = parseFloat(document.getElementById("valor").value);
-      const resultado = document.getElementById("resultado");
+      puntos = [xCritico];
+    }
 
-      let expr;
-      const tipoFunc = tipo.value;
-      if (tipoFunc === "lineal") {
-        expr = `(${a})*x + (${b}) - (${valor})`;
+    else if (grado === 2) {
+      const a2 = a;
+      const b2 = b;
+      const c2 = c - valor;
+      const disc = b2 * b2 - 4 * a2 * c2;
+
+      if (disc < 0) {
+        if ((a2 > 0 && (operador === '>' || operador === '>=')) ||
+            (a2 < 0 && (operador === '<' || operador === '<='))) {
+          solucion = "Todos los reales";
+        } else {
+          solucion = "Ninguno";
+        }
       } else {
-        expr = `(${a})*x^2 + (${b})*x + (${c}) - (${valor})`;
-      }
-
-      const simplified = math.simplify(expr);
-      const grado = simplified.degree('x');
-      const evaluado = simplified.toString();
-
-      let solucion = "", puntos = [];
-
-      if (grado === 1) {
-        const coef = math.derivative(evaluado, 'x').evaluate();
-        const constante = math.evaluate(evaluado, { x: 0 });
-        const xCritico = -constante / coef;
+        const x1 = (-b2 - Math.sqrt(disc)) / (2 * a2);
+        const x2 = (-b2 + Math.sqrt(disc)) / (2 * a2);
+        const izquierda = Math.min(x1, x2).toFixed(4);
+        const derecha = Math.max(x1, x2).toFixed(4);
+        puntos = [parseFloat(izquierda), parseFloat(derecha)];
 
         if (operador === '>') {
-          solucion = coef > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
+          solucion = a2 > 0
+            ? `x < ${izquierda} o x > ${derecha}`
+            : `x entre ${izquierda} y ${derecha}`;
         } else if (operador === '>=') {
-          solucion = coef > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
+          solucion = a2 > 0
+            ? `x ≤ ${izquierda} o x ≥ ${derecha}`
+            : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
         } else if (operador === '<') {
-          solucion = coef > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
+          solucion = a2 < 0
+            ? `x < ${izquierda} o x > ${derecha}`
+            : `x entre ${izquierda} y ${derecha}`;
         } else if (operador === '<=') {
-          solucion = coef > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
-        }
-        puntos = [xCritico];
-      }
-
-      else if (grado === 2) {
-        const a2 = a;
-        const b2 = b;
-        const c2 = c - valor;
-        const disc = b2 * b2 - 4 * a2 * c2;
-
-        if (disc < 0) {
-          if ((a2 > 0 && (operador === '>' || operador === '>=')) ||
-              (a2 < 0 && (operador === '<' || operador === '<='))) {
-            solucion = "Todos los valores reales";
-          } else {
-            solucion = "Ningún valor real";
-          }
-        } else {
-          const x1 = (-b2 - Math.sqrt(disc)) / (2 * a2);
-          const x2 = (-b2 + Math.sqrt(disc)) / (2 * a2);
-          const izquierda = Math.min(x1, x2).toFixed(4);
-          const derecha = Math.max(x1, x2).toFixed(4);
-          puntos = [parseFloat(izquierda), parseFloat(derecha)];
-
-          if (operador === '>') {
-            solucion = a2 > 0
-              ? `x < ${izquierda} o x > ${derecha}`
-              : `x entre ${izquierda} y ${derecha} (sin extremos)`;
-          } else if (operador === '>=') {
-            solucion = a2 > 0
-              ? `x ≤ ${izquierda} o x ≥ ${derecha}`
-              : `x entre ${izquierda} y ${derecha} (con extremos)`;
-          } else if (operador === '<') {
-            solucion = a2 < 0
-              ? `x < ${izquierda} o x > ${derecha}`
-              : `x entre ${izquierda} y ${derecha} (sin extremos)`;
-          } else if (operador === '<=') {
-            solucion = a2 < 0
-              ? `x ≤ ${izquierda} o x ≥ ${derecha}`
-              : `x entre ${izquierda} y ${derecha} (con extremos)`;
-          }
+          solucion = a2 < 0
+            ? `x ≤ ${izquierda} o x ≥ ${derecha}`
+            : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
         }
       }
-
-      resultado.innerHTML = `Solución: <span style="color: green;">${solucion}</span>`;
-      graficar(expr, operador);
     }
 
-    function graficar(expr, operador) {
-      const x = [];
-      const y = [];
-      const region = [];
+    resultado.innerHTML = `Solución: <span style="color: green;">${solucion}</span>`;
+    graficar(expr, operador);
+  }
 
-      for (let i = -20; i <= 20; i += 0.1) {
-        x.push(i);
-        const val = math.evaluate(expr, { x: i });
-        y.push(val);
+  function graficar(expr, operador) {
+    const x = [], y = [], region = [];
 
-        let cumple = false;
-        if (operador === ">") cumple = val > 0;
-        if (operador === ">=") cumple = val >= 0;
-        if (operador === "<") cumple = val < 0;
-        if (operador === "<=") cumple = val <= 0;
-        region.push(cumple ? val : NaN);
-      }
-
-      const trace1 = {
-        x: x,
-        y: y,
-        mode: 'lines',
-        name: 'Función',
-        line: { color: 'blue' }
-      };
-
-      const trace2 = {
-        x: x,
-        y: region,
-        fill: 'tozeroy',
-        type: 'scatter',
-        mode: 'none',
-        name: 'Región válida',
-        fillcolor: 'rgba(0,255,0,0.2)'
-      };
-
-      Plotly.newPlot("grafica", [trace1, trace2], {
-        title: 'Gráfica de la desigualdad',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'f(x)' }
-      });
+    for (let i = -20; i <= 20; i += 0.1) {
+      x.push(i);
+      const val = math.evaluate(expr, { x: i });
+      y.push(val);
+      let cumple = false;
+      if (operador === ">") cumple = val > 0;
+      if (operador === ">=") cumple = val >= 0;
+      if (operador === "<") cumple = val < 0;
+      if (operador === "<=") cumple = val <= 0;
+      region.push(cumple ? val : NaN);
     }
-  </script>
+
+    const trace1 = {
+      x: x,
+      y: y,
+      mode: 'lines',
+      name: 'Función',
+      line: { color: '#007bff' }
+    };
+
+    const trace2 = {
+      x: x,
+      y: region,
+      fill: 'tozeroy',
+      type: 'scatter',
+      mode: 'none',
+      name: 'Solución',
+      fillcolor: 'rgba(0, 200, 83, 0.2)'
+    };
+
+    Plotly.newPlot("grafica", [trace1, trace2], {
+      title: 'Gráfica de la desigualdad',
+      xaxis: { title: 'x' },
+      yaxis: { title: 'f(x)' },
+      responsive: true
+    });
+  }
+</script>
 
 </body>
 </html>
+
 
