@@ -121,11 +121,7 @@
   const cInput = document.getElementById('c');
 
   tipo.addEventListener('change', () => {
-    if (tipo.value === 'cuadratica') {
-      cInput.style.display = 'inline-block';
-    } else {
-      cInput.style.display = 'none';
-    }
+    cInput.style.display = tipo.value === 'cuadratica' ? 'inline-block' : 'none';
   });
 
   function resolver() {
@@ -136,102 +132,83 @@
     const valor = parseFloat(document.getElementById("valor").value);
     const resultado = document.getElementById("resultado");
 
-    let expr;
-    const tipoFunc = tipo.value;
+    let solucion = "";
+    let puntos = [];
 
-    if (tipoFunc === "lineal") {
-      expr = `(${a})*x + (${b}) - (${valor})`;
-    } else {
-      expr = `(${a})*x^2 + (${b})*x + (${c}) - (${valor})`;
-    }
+    if (tipo.value === "lineal") {
+      // ax + b ? valor → ax + b - valor ? 0
+      const nuevaB = b - valor;
+      const xCritico = -nuevaB / a;
 
-    const simplified = math.simplify(expr);
-    const grado = simplified.degree('x');
-    const evaluado = simplified.toString();
-    let solucion = "", puntos = [];
-
-    if (grado === 1) {
-      const coef = math.derivative(evaluado, 'x').evaluate();
-      const constante = math.evaluate(evaluado, { x: 0 });
-      const xCritico = -constante / coef;
-
-      if (operador === '>') {
-        solucion = coef > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
-      } else if (operador === '>=') {
-        solucion = coef > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
-      } else if (operador === '<') {
-        solucion = coef > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
-      } else if (operador === '<=') {
-        solucion = coef > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
-      }
+      if (operador === ">") solucion = a > 0 ? `x > ${xCritico}` : `x < ${xCritico}`;
+      else if (operador === ">=") solucion = a > 0 ? `x ≥ ${xCritico}` : `x ≤ ${xCritico}`;
+      else if (operador === "<") solucion = a > 0 ? `x < ${xCritico}` : `x > ${xCritico}`;
+      else if (operador === "<=") solucion = a > 0 ? `x ≤ ${xCritico}` : `x ≥ ${xCritico}`;
 
       puntos = [xCritico];
-    }
+    } else {
+      // ax² + bx + c ? valor → ax² + bx + c - valor ? 0
+      const nuevaC = c - valor;
+      const discriminante = b * b - 4 * a * nuevaC;
 
-    else if (grado === 2) {
-      const a2 = a;
-      const b2 = b;
-      const c2 = c - valor;
-      const disc = b2 * b2 - 4 * a2 * c2;
-
-      if (disc < 0) {
-        if ((a2 > 0 && (operador === '>' || operador === '>=')) ||
-            (a2 < 0 && (operador === '<' || operador === '<='))) {
-          solucion = "Todos los reales";
-        } else {
-          solucion = "Ninguno";
-        }
+      if (discriminante < 0) {
+        solucion = (a > 0 && (operador === ">" || operador === ">=")) ||
+                   (a < 0 && (operador === "<" || operador === "<="))
+                   ? "Solución: todos los reales"
+                   : "Sin solución real";
       } else {
-        const x1 = (-b2 - Math.sqrt(disc)) / (2 * a2);
-        const x2 = (-b2 + Math.sqrt(disc)) / (2 * a2);
+        const x1 = (-b - Math.sqrt(discriminante)) / (2 * a);
+        const x2 = (-b + Math.sqrt(discriminante)) / (2 * a);
         const izquierda = Math.min(x1, x2).toFixed(4);
         const derecha = Math.max(x1, x2).toFixed(4);
         puntos = [parseFloat(izquierda), parseFloat(derecha)];
 
-        if (operador === '>') {
-          solucion = a2 > 0
+        if (operador === ">") {
+          solucion = a > 0
             ? `x < ${izquierda} o x > ${derecha}`
             : `x entre ${izquierda} y ${derecha}`;
-        } else if (operador === '>=') {
-          solucion = a2 > 0
+        } else if (operador === ">=") {
+          solucion = a > 0
             ? `x ≤ ${izquierda} o x ≥ ${derecha}`
             : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
-        } else if (operador === '<') {
-          solucion = a2 < 0
-            ? `x < ${izquierda} o x > ${derecha}`
-            : `x entre ${izquierda} y ${derecha}`;
-        } else if (operador === '<=') {
-          solucion = a2 < 0
-            ? `x ≤ ${izquierda} o x ≥ ${derecha}`
-            : `x entre ${izquierda} y ${derecha} (incluye extremos)`;
+        } else if (operador === "<") {
+          solucion = a > 0
+            ? `x entre ${izquierda} y ${derecha}`
+            : `x < ${izquierda} o x > ${derecha}`;
+        } else if (operador === "<=") {
+          solucion = a > 0
+            ? `x entre ${izquierda} y ${derecha} (incluye extremos)`
+            : `x ≤ ${izquierda} o x ≥ ${derecha}`;
         }
       }
     }
 
-    resultado.innerHTML = `Solución: <span style="color: green;">${solucion}</span>`;
-    graficar(expr, operador);
+    resultado.innerHTML = `<span style="color: green;">${solucion}</span>`;
+    graficar(a, b, c, valor, operador);
   }
 
-  function graficar(expr, operador) {
+  function graficar(a, b, c, valor, operador) {
+    const tipoDesig = tipo.value;
     const x = [], y = [], region = [];
 
     for (let i = -20; i <= 20; i += 0.1) {
       x.push(i);
-      const val = math.evaluate(expr, { x: i });
-      y.push(val);
+      let fx = tipoDesig === "lineal" ? a * i + b : a * i * i + b * i + c;
+      y.push(fx);
+
       let cumple = false;
-      if (operador === ">") cumple = val > 0;
-      if (operador === ">=") cumple = val >= 0;
-      if (operador === "<") cumple = val < 0;
-      if (operador === "<=") cumple = val <= 0;
-      region.push(cumple ? val : NaN);
+      if (operador === ">") cumple = fx > valor;
+      if (operador === ">=") cumple = fx >= valor;
+      if (operador === "<") cumple = fx < valor;
+      if (operador === "<=") cumple = fx <= valor;
+      region.push(cumple ? fx : NaN);
     }
 
     const trace1 = {
       x: x,
       y: y,
       mode: 'lines',
-      name: 'Función',
+      name: 'f(x)',
       line: { color: '#007bff' }
     };
 
@@ -241,7 +218,7 @@
       fill: 'tozeroy',
       type: 'scatter',
       mode: 'none',
-      name: 'Solución',
+      name: 'Región válida',
       fillcolor: 'rgba(0, 200, 83, 0.2)'
     };
 
@@ -256,5 +233,3 @@
 
 </body>
 </html>
-
-
