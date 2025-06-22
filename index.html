@@ -1,210 +1,397 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Calculadora de desigualdades</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f0f5;
-      padding: 30px;
-    }
-
-    .container {
-      max-width: 800px;
-      background: white;
-      margin: auto;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-      text-align: center;
-      color: #fcb308;
-      margin-bottom: 20px;
-    }
-
-    .form-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    select, input, button {
-      padding: 10px;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    input {
-      width: 100px;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #eeb5ff;
-    }
-
-    #resultado {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      color: green;
-    }
-
-    #grafica {
-      margin-top: 30px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Dominio y Rango</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #fa8cf1;
+            --secondary: #c22af5;
+            --accent: #d48efa;
+            --light: #b0d7ff;
+            --dark: #212529;
+            --success: #c2f0ff;
+            --warning: #7dffcf;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .calculator {
+            padding: 2rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        button:hover {
+            background: #d81159;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(248, 37, 133, 0.3);
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid var(--primary);
+        }
+        
+        .result-card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .result-value {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .chart-container {
+            margin-top: 2rem;
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .error {
+            color: #d62828;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .examples {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .examples span {
+            display: inline-block;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0.6rem;
+            background: #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .examples span:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .results {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>Calculadora de Dominio y Rango</h1>
+            <p class="subtitle">Ingresa una función matemática y visualiza su comportamiento</p>
+        </header>
+        
+        <div class="calculator">
+            <div class="input-group">
+                <label for="function-input">Ingresa tu función (usa 'x' como variable):</label>
+                <input type="text" id="function-input" placeholder="Ej: x^2 + 2x + 1">
+                <div class="error" id="error-message">Por favor ingresa una función válida</div>
+                
+                <div class="examples">
+                    <span onclick="insertExample('x^2')">x²</span>
+                    <span onclick="insertExample('sqrt(x)')">√x</span>
+                    <span onclick="insertExample('1/x')">1/x</span>
+                    <span onclick="insertExample('sin(x)')">sen(x)</span>
+                    <span onclick="insertExample('log(x)')">log(x)</span>
+                    <span onclick="insertExample('abs(x)')">|x|</span>
+                </div>
+            </div>
+            
+            <button id="calculate-btn">Calcular Dominio y Rango</button>
+            
+            <div class="results">
+                <div class="result-card">
+                    <h3>Dominio</h3>
+                    <div class="result-value" id="domain-result">Ingresa una función para calcular</div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>Rango</h3>
+                    <div class="result-value" id="range-result">Ingresa una función para calcular</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="function-chart"></canvas>
+            </div>
+        </div>
+    </div>
 
-<div class="container">
-  <h2>Calculadora de Desigualdades</h2>
-
-  <div class="form-row">
-    <select id="tipo">
-      <option value="lineal">Lineal (ax + b)</option>
-      <option value="cuadratica">Cuadrática (ax² + bx + c)</option>
-    </select>
-
-    <input type="number" id="a" placeholder="Coef. a">
-    <input type="number" id="b" placeholder="Coef. b">
-    <input type="number" id="c" placeholder="Coef. c" style="display: none;">
-    <select id="operador">
-      <option value=">">></option>
-      <option value=">=">>=</option>
-      <option value="<"><</option>
-      <option value="<="><=</option>
-    </select>
-
-    <input type="number" id="valor" placeholder="Comparar con...">
-    <button onclick="resolver()">Resolver :) </button>
-  </div>
-
-  <div id="resultado"></div>
-  <div id="grafica"></div>
-</div>
-
-<script>
-  const tipo = document.getElementById('tipo');
-  const cInput = document.getElementById('c');
-
-  tipo.addEventListener('change', () => {
-    cInput.style.display = tipo.value === 'cuadratica' ? 'inline-block' : 'none';
-  });
-
-  function resolver() {
-    const a = parseFloat(document.getElementById("a").value);
-    const b = parseFloat(document.getElementById("b").value);
-    const c = parseFloat(document.getElementById("c").value) || 0;
-    const operador = document.getElementById("operador").value;
-    const valor = parseFloat(document.getElementById("valor").value);
-    const resultado = document.getElementById("resultado");
-
-    let solucion = "";
-
-    if (tipo.value === "lineal") {
-      const nuevaB = b - valor;
-      const xCritico = -nuevaB / a;
-      const xRed = parseFloat(xCritico.toPrecision(4));
-
-      if (operador === ">") solucion = a > 0 ? `x > ${xRed}` : `x < ${xRed}`;
-      else if (operador === ">=") solucion = a > 0 ? `x ≥ ${xRed}` : `x ≤ ${xRed}`;
-      else if (operador === "<") solucion = a > 0 ? `x < ${xRed}` : `x > ${xRed}`;
-      else if (operador === "<=") solucion = a > 0 ? `x ≤ ${xRed}` : `x ≥ ${xRed}`;
-    } else {
-      const nuevaC = c - valor;
-      const disc = b * b - 4 * a * nuevaC;
-
-      if (disc < 0) {
-        solucion = (a > 0 && (operador === ">" || operador === ">=")) ||
-                   (a < 0 && (operador === "<" || operador === "<="))
-                   ? "Solución: todos los reales"
-                   : "Sin solución real";
-      } else {
-        const x1 = (-b - Math.sqrt(disc)) / (2 * a);
-        const x2 = (-b + Math.sqrt(disc)) / (2 * a);
-        const xLeft = parseFloat(Math.min(x1, x2).toPrecision(4));
-        const xRight = parseFloat(Math.max(x1, x2).toPrecision(4));
-
-        if (operador === ">") {
-          solucion = a > 0
-            ? `x < ${xLeft} o x > ${xRight}`
-            : `x entre ${xLeft} y ${xRight}`;
-        } else if (operador === ">=") {
-          solucion = a > 0
-            ? `x ≤ ${xLeft} o x ≥ ${xRight}`
-            : `x entre ${xLeft} y ${xRight} (incluye extremos)`;
-        } else if (operador === "<") {
-          solucion = a > 0
-            ? `x entre ${xLeft} y ${xRight}`
-            : `x < ${xLeft} o x > ${xRight}`;
-        } else if (operador === "<=") {
-          solucion = a > 0
-            ? `x entre ${xLeft} y ${xRight} (incluye extremos)`
-            : `x ≤ ${xLeft} o x ≥ ${xRight}`;
+    <script>
+        // Variables globales
+        let functionChart = null;
+        
+        // Insertar ejemplo en el input
+        function insertExample(example) {
+            document.getElementById('function-input').value = example;
         }
-      }
-    }
-
-    resultado.textContent = solucion;
-    graficar(a, b, c, valor, operador, tipo.value);
-  }
-
-  function graficar(a, b, c, valor, operador, tipoFuncion) {
-    const x = [], y = [], region = [];
-    for (let i = -20; i <= 20; i += 0.1) {
-      x.push(i);
-      let fx = tipoFuncion === "lineal" ? a * i + b : a * i * i + b * i + c;
-      y.push(fx);
-
-      let cumple = false;
-      if (operador === ">") cumple = fx > valor;
-      else if (operador === ">=") cumple = fx >= valor;
-      else if (operador === "<") cumple = fx < valor;
-      else if (operador === "<=") cumple = fx <= valor;
-      region.push(cumple ? fx : NaN);
-    }
-
-    const trace1 = {
-      x: x,
-      y: y,
-      name: 'f(x)',
-      mode: 'lines',
-      line: { color: '#007bff' }
-    };
-
-    const trace2 = {
-      x: x,
-      y: region,
-      name: 'Solución',
-      mode: 'none',
-      fill: 'tozeroy',
-      fillcolor: 'rgba(0,200,83,0.2)'
-    };
-
-    Plotly.newPlot("grafica", [trace1, trace2], {
-      title: 'Gráfica de la Desigualdad',
-      xaxis: { title: 'x' },
-      yaxis: { title: 'f(x)' },
-      responsive: true
-    });
-  }
-</script>
-
+        
+        // Calcular dominio y rango
+        document.getElementById('calculate-btn').addEventListener('click', function() {
+            const functionInput = document.getElementById('function-input').value.trim();
+            const errorElement = document.getElementById('error-message');
+            
+            // Validar entrada
+            if (!functionInput || !functionInput.includes('x')) {
+                errorElement.style.display = 'block';
+                return;
+            } else {
+                errorElement.style.display = 'none';
+            }
+            
+            try {
+                // Calcular dominio y rango (simplificado para demostración)
+                const domain = calculateDomain(functionInput);
+                const range = calculateRange(functionInput);
+                
+                // Mostrar resultados
+                document.getElementById('domain-result').innerHTML = domain;
+                document.getElementById('range-result').innerHTML = range;
+                
+                // Graficar función
+                plotFunction(functionInput);
+            } catch (error) {
+                errorElement.textContent = 'Error al procesar la función: ' + error.message;
+                errorElement.style.display = 'block';
+            }
+        });
+        
+        // Función simplificada para calcular dominio
+        function calculateDomain(func) {
+            if (func.includes('sqrt')) {
+                return 'x ≥ 0';
+            } else if (func.includes('/x')) {
+                return 'x ≠ 0';
+            } else if (func.includes('log')) {
+                return 'x > 0';
+            } else {
+                return 'Todos los números reales (-∞, ∞)';
+            }
+        }
+        
+        // Función simplificada para calcular rango
+        function calculateRange(func) {
+            if (func.includes('x^2') || func.includes('pow(x,2)')) {
+                return 'y ≥ 0';
+            } else if (func.includes('sin') || func.includes('cos')) {
+                return '-1 ≤ y ≤ 1';
+            } else if (func.includes('sqrt')) {
+                return 'y ≥ 0';
+            } else if (func.includes('abs')) {
+                return 'y ≥ 0';
+            } else {
+                return 'Todos los números reales (-∞, ∞)';
+            }
+        }
+        
+        // Graficar la función
+        function plotFunction(func) {
+            const ctx = document.getElementById('function-chart').getContext('2d');
+            
+            // Generar puntos para el gráfico
+            const labels = [];
+            const data = [];
+            
+            for (let x = -10; x <= 10; x += 0.5) {
+                try {
+                    // Evaluar la función (simplificado para demostración)
+                    // En una aplicación real, usarías un parser matemático como math.js
+                    let y;
+                    const safeFunc = func.replace('^', '**')
+                                        .replace('sqrt', 'Math.sqrt')
+                                        .replace('sin', 'Math.sin')
+                                        .replace('cos', 'Math.cos')
+                                        .replace('tan', 'Math.tan')
+                                        .replace('log', 'Math.log')
+                                        .replace('abs', 'Math.abs');
+                    
+                    // Evitar divisiones por cero y log(0)
+                    if ((safeFunc.includes('/x') && x === 0) || 
+                        (safeFunc.includes('Math.log') && x <= 0)) {
+                        continue;
+                    }
+                    
+                    // Evaluar la función
+                    y = eval(safeFunc);
+                    
+                    labels.push(x);
+                    data.push(y);
+                } catch (e) {
+                    console.error(`Error al evaluar x=${x}:`, e);
+                }
+            }
+            
+            // Destruir gráfico anterior si existe
+            if (functionChart) {
+                functionChart.destroy();
+            }
+            
+            // Crear nuevo gráfico
+            functionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `f(x) = ${func}`,
+                        data: data,
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Gráfico de f(x) = ${func}`,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Eje x'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Eje y'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
 
-
+```
