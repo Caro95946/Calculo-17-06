@@ -2,139 +2,94 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Gráfica de Función</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Calculadora de Dominio, Rango y Gráfica</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #f9fafb;
+      background-color: #f4f9ff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
       color: #333;
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    h1 {
+      color: #1b3a57;
     }
     input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
       width: 100%;
-      padding: 0.8rem;
-      font-size: 1rem;
-      margin-top: 1rem;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 0.5rem;
     }
     button {
-      background-color: #2563eb;
+      background-color: #1b6ca8;
       color: white;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #1e40af;
+    #output {
+      margin-top: 20px;
     }
-    .output {
-      margin-top: 1rem;
-      background-color: #f1f5f9;
-      padding: 1rem;
-      border-radius: 0.5rem;
-    }
-    canvas {
-      margin-top: 2rem;
+    #graph {
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Calculadora de Dominio y Rango</h2>
-    <input id="funcion" type="text" placeholder="Ejemplo: f(x) = 2x + 3">
-    <button onclick="graficar()">Graficar</button>
+  <h1>Calculadora de Dominio, Rango y Gráfica</h1>
+  <label for="funcion">Introduce la función f(x):</label>
+  <input type="text" id="funcion" placeholder="Ej. 1/x, x^2 + 3, sqrt(x-2)" />
+  <button onclick="calcular()">Calcular y Graficar</button>
 
-    <div class="output" id="resultado"></div>
-    <canvas id="grafico" width="700" height="400"></canvas>
-  </div>
+  <div id="output"></div>
+  <div id="graph"></div>
 
   <script>
-    let chart;
+    function calcular() {
+      const expr = document.getElementById("funcion").value;
+      const output = document.getElementById("output");
+      const graph = document.getElementById("graph");
+      let x_vals = [], y_vals = [];
+      const f = math.compile(expr);
+      let y_min = Infinity, y_max = -Infinity;
+      output.innerHTML = '';
 
-    function limpiarFuncion(input) {
-      input = input.toLowerCase().replace(/\s/g, '');
-      input = input.replace(/^f\(x\)=|^y=|^g\(x\)=/, '');
-      input = input.replace(/(\d)([a-zA-Z])/g, '$1*$2');
-      input = input.replace(/([a-zA-Z])\(/g, '$1*(');
-      input = input.replace(/\)([a-zA-Z])/g, ')*$1');
-      return input;
-    }
-
-    function redondear(n) {
-      return Math.round(n * 100) / 100;
-    }
-
-    function graficar() {
-      const entrada = document.getElementById('funcion').value;
-      const funcionStr = limpiarFuncion(entrada);
-      const resultado = document.getElementById('resultado');
-
-      let f;
-      try {
-        f = math.compile(funcionStr);
-      } catch {
-        resultado.innerHTML = '<b>Error:</b> No se pudo interpretar la función.';
-        return;
-      }
-
-      const x = [], y = [];
-      for (let i = -20; i <= 20; i += 0.5) {
+      // Generar valores de x y y para graficar
+      for (let x = -50; x <= 50; x += 0.1) {
         try {
-          const yi = f.evaluate({ x: i });
-          if (isFinite(yi)) {
-            x.push(redondear(i));
-            y.push(redondear(yi));
+          const scope = {x: x};
+          const y = f.evaluate(scope);
+          if (typeof y === 'number' && isFinite(y)) {
+            x_vals.push(x);
+            y_vals.push(y);
+            if (y < y_min) y_min = y;
+            if (y > y_max) y_max = y;
           }
-        } catch {}
+        } catch (err) {
+          continue;
+        }
       }
 
-      if (x.length < 2) {
-        resultado.innerHTML = 'No se pudo graficar esta función.';
-        return;
-      }
-
-      // Mostrar dominio y rango
-      const dom = `[${x[0]}, ${x[x.length - 1]}]`;
-      const ran = `[${Math.min(...y)}, ${Math.max(...y)}]`;
-
-      resultado.innerHTML = `
-        <b>Función evaluada:</b> f(x) = ${funcionStr}<br>
-        <b>Dominio aprox:</b> ${dom}<br>
-        <b>Rango aprox:</b> ${ran}
+      // Mostrar dominio y rango aproximado
+      output.innerHTML = `
+        <strong>Dominio aproximado:</strong> [${x_vals[0].toFixed(2)}, ${x_vals[x_vals.length - 1].toFixed(2)}]<br>
+        <strong>Rango aproximado:</strong> [${y_min.toFixed(2)}, ${y_max.toFixed(2)}]
       `;
 
-      // Graficar con Chart.js
-      const ctx = document.getElementById('grafico').getContext('2d');
-      if (chart) chart.destroy(); // eliminar gráfico anterior
-
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: x,
-          datasets: [{
-            label: 'f(x)',
-            data: y,
-            borderColor: '#2563eb',
-            fill: false,
-            tension: 0.2
-          }]
-        },
-        options: {
-          scales: {
-            x: { title: { display: true, text: 'x' }},
-            y: { title: { display: true, text: 'f(x)' }}
-          }
-        }
-      });
+      // Graficar con Plotly
+      Plotly.newPlot(graph, [{
+        x: x_vals,
+        y: y_vals,
+        mode: 'lines',
+        name: 'f(x)',
+        line: {color: '#1b6ca8'}
+      }], {
+        title: `Gráfica de f(x) = ${expr}`,
+        margin: {t: 50},
+        xaxis: {title: "x"},
+        yaxis: {title: "f(x)"},
+      }, {responsive: true});
     }
   </script>
 </body>
