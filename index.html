@@ -10,15 +10,15 @@
       --primary: #fa8cf1;
       --secondary: #c22af5;
       --accent: #d48efa;
-      --light: #b0d7ff;
-      --dark: #212529;
+      --light: #fff5fc;
+      --dark: #343a40;
       --success: #c2f0ff;
       --warning: #7dffcf;
     }
 
     body {
-      background: var(--dark);
-      color: white;
+      background: var(--light);
+      color: var(--dark);
       font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
@@ -28,11 +28,11 @@
     }
 
     h1 {
-      color: var(--primary);
+      color: var(--secondary);
     }
 
     .container {
-      background: var(--light);
+      background: white;
       padding: 2rem;
       border-radius: 1rem;
       box-shadow: 0 0 20px var(--accent);
@@ -51,7 +51,7 @@
     }
 
     input {
-      background: #fff;
+      background: #f9f9f9;
       color: #000;
     }
 
@@ -59,7 +59,7 @@
       background: var(--primary);
       color: white;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s ease-in-out;
     }
 
     button:hover {
@@ -71,8 +71,9 @@
       width: 100%;
       max-width: 600px;
       height: 400px;
-      background: white;
+      background: #ffffff;
       border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -83,6 +84,11 @@
     <input id="funcion" type="text" placeholder="Ej: x^2 + 3" />
     <button onclick="graficarFuncion()">Graficar</button>
     <p id="resultado"></p>
+    <h3>Métodos de interpretación:</h3>
+    <ul>
+      <li><strong>Método gráfico:</strong> Observa los extremos del gráfico para visualizar los valores que toma x (dominio) y los valores posibles de f(x) (rango).</li>
+      <li><strong>Método algebraico:</strong> Analiza la función algebraicamente para determinar las restricciones en x (por ejemplo, evitar raíces cuadradas de números negativos o divisiones por cero).</li>
+    </ul>
   </div>
   <canvas id="grafico"></canvas>
 
@@ -115,9 +121,14 @@
         }
       }
 
+      if (xValues.length === 0 || yValues.length === 0) {
+        document.getElementById("resultado").innerHTML = "Función inválida o no definible en el intervalo.";
+        return;
+      }
+
       const dominio = `[${Math.min(...xValues).toFixed(2)}, ${Math.max(...xValues).toFixed(2)}]`;
       const rango = `[${Math.min(...yValues).toFixed(2)}, ${Math.max(...yValues).toFixed(2)}]`;
-      document.getElementById("resultado").innerHTML = `Dominio: ${dominio}<br>Rango: ${rango}`;
+      document.getElementById("resultado").innerHTML = `<strong>Dominio:</strong> ${dominio}<br><strong>Rango:</strong> ${rango}`;
 
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
@@ -127,21 +138,21 @@
           datasets: [{
             label: 'f(x)',
             data: yValues,
-            borderColor: 'var(--primary)',
+            borderColor: '#c22af5',
             borderWidth: 2,
             fill: false,
-            tension: 0.1
+            tension: 0.15
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: 'black' } }
+            legend: { labels: { color: '#343a40' } }
           },
           scales: {
-            x: { ticks: { color: 'black' }, title: { display: true, text: 'x', color: 'black' } },
-            y: { ticks: { color: 'black' }, title: { display: true, text: 'f(x)', color: 'black' } }
+            x: { ticks: { color: '#343a40' }, title: { display: true, text: 'x', color: '#343a40' } },
+            y: { ticks: { color: '#343a40' }, title: { display: true, text: 'f(x)', color: '#343a40' } }
           },
           interaction: {
             mode: 'index',
@@ -165,4 +176,3 @@
 </body>
 
 </html>
-
