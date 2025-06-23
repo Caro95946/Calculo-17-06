@@ -52,7 +52,7 @@
 
     input {
       background: #f9f9f9;
-      color: #000;
+      color: #e7d9ff;
     }
 
     button {
@@ -94,6 +94,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <script>
     const canvas = document.getElementById('grafico');
     const ctx = canvas.getContext('2d');
@@ -101,9 +102,10 @@
 
     function evaluarFuncion(expr, x) {
       try {
-        const scope = { x };
-        return math.evaluate(expr, scope);
-      } catch {
+        const node = math.parse(expr);
+        const code = node.compile();
+        return code.evaluate({ x });
+      } catch (err) {
         return NaN;
       }
     }
@@ -115,19 +117,18 @@
 
       for (let x = -20; x <= 20; x += 0.1) {
         const y = evaluarFuncion(exprInput, x);
-        if (!isNaN(y) && isFinite(y)) {
-          xValues.push(x);
-          yValues.push(y);
-        }
+        xValues.push(x);
+        yValues.push(isFinite(y) ? y : null);
       }
 
-      if (xValues.length === 0 || yValues.length === 0) {
+      const yValid = yValues.filter(y => y !== null);
+      if (yValid.length === 0) {
         document.getElementById("resultado").innerHTML = "Función inválida o no definible en el intervalo.";
         return;
       }
 
       const dominio = `[${Math.min(...xValues).toFixed(2)}, ${Math.max(...xValues).toFixed(2)}]`;
-      const rango = `[${Math.min(...yValues).toFixed(2)}, ${Math.max(...yValues).toFixed(2)}]`;
+      const rango = `[${Math.min(...yValid).toFixed(2)}, ${Math.max(...yValid).toFixed(2)}]`;
       document.getElementById("resultado").innerHTML = `<strong>Dominio:</strong> ${dominio}<br><strong>Rango:</strong> ${rango}`;
 
       if (chart) chart.destroy();
@@ -140,39 +141,50 @@
             data: yValues,
             borderColor: '#c22af5',
             borderWidth: 2,
+            spanGaps: true,
             fill: false,
-            tension: 0.15
+            tension: 0.2,
+            pointRadius: 0
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#343a40' } }
+            legend: { labels: { color: '#343a40' } },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'xy'
+              },
+              zoom: {
+                wheel: { enabled: true },
+                pinch: { enabled: true },
+                mode: 'xy'
+              }
+            }
           },
           scales: {
-            x: { ticks: { color: '#343a40' }, title: { display: true, text: 'x', color: '#343a40' } },
-            y: { ticks: { color: '#343a40' }, title: { display: true, text: 'f(x)', color: '#343a40' } }
+            x: {
+              ticks: { color: '#343a40' },
+              title: { display: true, text: 'x', color: '#343a40' },
+              grid: { color: '#e0e0e0' }
+            },
+            y: {
+              ticks: { color: '#343a40' },
+              title: { display: true, text: 'f(x)', color: '#343a40' },
+              grid: { color: '#e0e0e0' }
+            }
           },
           interaction: {
-            mode: 'index',
+            mode: 'nearest',
+            axis: 'x',
             intersect: false,
-          },
-          pan: {
-            enabled: true,
-            mode: 'xy'
-          },
-          zoom: {
-            wheel: { enabled: true },
-            pinch: { enabled: true },
-            mode: 'xy',
           }
-        },
-        plugins: [Chart.Zoom]
+        }
       });
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 </body>
 
 </html>
