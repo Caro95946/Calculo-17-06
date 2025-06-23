@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Dominio y Rango</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.7.0/lib/browser/math.js"></script>
     <style>
         :root {
-            --primary: #fa8cf1;
-            --secondary: #c22af5;
-            --accent: #d48efa;
-            --light: #b0d7ff;
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --light: #f8f9fa;
             --dark: #212529;
-            --success: #c2f0ff;
-            --warning: #7dffcf;
+            --success: #4cc9f0;
+            --warning: #f8961e;
         }
         
         * {
@@ -24,7 +25,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #474af5 0%, #14f7f7 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             padding: 2rem;
             color: var(--dark);
@@ -74,7 +75,7 @@
         input {
             width: 100%;
             padding: 0.8rem 1rem;
-            border: 2px solid #b8dafc;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 1rem;
             transition: all 0.3s ease;
@@ -102,7 +103,7 @@
         }
         
         button:hover {
-            background: #fc002a;
+            background: #d81159;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(248, 37, 133, 0.3);
         }
@@ -139,6 +140,13 @@
             border-radius: 10px;
             padding: 1.5rem;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: 400px;
+            position: relative;
+        }
+        
+        #function-chart {
+            width: 100%;
+            height: 100%;
         }
         
         .error {
@@ -151,7 +159,7 @@
         .examples {
             margin-top: 1.5rem;
             font-size: 0.9rem;
-            color: #32373b;
+            color: #6c757d;
         }
         
         .examples span {
@@ -159,7 +167,7 @@
             margin-right: 0.5rem;
             margin-bottom: 0.5rem;
             padding: 0.3rem 0.6rem;
-            background: #c20abf;
+            background: #e9ecef;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -178,6 +186,10 @@
             body {
                 padding: 1rem;
             }
+            
+            .chart-container {
+                height: 300px;
+            }
         }
     </style>
 </head>
@@ -185,12 +197,12 @@
     <div class="container">
         <header>
             <h1>Calculadora de Dominio y Rango</h1>
-            <p class="subtitle">Ingresa una función matemática y visualiza su comportamiento :) </p>
+            <p class="subtitle">Ingresa una función matemática y visualiza su comportamiento</p>
         </header>
         
         <div class="calculator">
             <div class="input-group">
-                <label for="function-input">Ingresa la función (usa 'x' como variable):</label>
+                <label for="function-input">Ingresa tu función (usa 'x' como variable):</label>
                 <input type="text" id="function-input" placeholder="Ej: x^2 + 2x + 1">
                 <div class="error" id="error-message">Por favor ingresa una función válida</div>
                 
@@ -199,7 +211,7 @@
                     <span onclick="insertExample('sqrt(x)')">√x</span>
                     <span onclick="insertExample('1/x')">1/x</span>
                     <span onclick="insertExample('sin(x)')">sen(x)</span>
-                    <span onclick="insertExample('log(x)')">log(x)</span>
+                    <span onclick="insertExample('log(x, 10)')">log(x)</span>
                     <span onclick="insertExample('abs(x)')">|x|</span>
                 </div>
             </div>
@@ -240,13 +252,16 @@
             
             // Validar entrada
             if (!functionInput || !functionInput.includes('x')) {
+                errorElement.textContent = 'Por favor ingresa una función válida con la variable x';
                 errorElement.style.display = 'block';
                 return;
-            } else {
-                errorElement.style.display = 'none';
             }
             
             try {
+                // Primero validar que la función se puede parsear
+                const node = math.parse(functionInput);
+                const compiled = node.compile();
+                
                 // Calcular dominio y rango (simplificado para demostración)
                 const domain = calculateDomain(functionInput);
                 const range = calculateRange(functionInput);
@@ -257,20 +272,24 @@
                 
                 // Graficar función
                 plotFunction(functionInput);
+                errorElement.style.display = 'none';
             } catch (error) {
                 errorElement.textContent = 'Error al procesar la función: ' + error.message;
                 errorElement.style.display = 'block';
+                console.error(error);
             }
         });
         
         // Función simplificada para calcular dominio
         function calculateDomain(func) {
-            if (func.includes('sqrt')) {
+            if (func.includes('sqrt(')) {
                 return 'x ≥ 0';
-            } else if (func.includes('/x')) {
+            } else if (func.includes('/x') || func.includes('x^(-1)')) {
                 return 'x ≠ 0';
-            } else if (func.includes('log')) {
+            } else if (func.includes('log(')) {
                 return 'x > 0';
+            } else if (func.includes('asin(') || func.includes('acos(')) {
+                return '-1 ≤ x ≤ 1';
             } else {
                 return 'Todos los números reales (-∞, ∞)';
             }
@@ -280,12 +299,14 @@
         function calculateRange(func) {
             if (func.includes('x^2') || func.includes('pow(x,2)')) {
                 return 'y ≥ 0';
-            } else if (func.includes('sin') || func.includes('cos')) {
+            } else if (func.includes('sin(') || func.includes('cos(')) {
                 return '-1 ≤ y ≤ 1';
-            } else if (func.includes('sqrt')) {
+            } else if (func.includes('sqrt(')) {
                 return 'y ≥ 0';
-            } else if (func.includes('abs')) {
+            } else if (func.includes('abs(')) {
                 return 'y ≥ 0';
+            } else if (func.includes('exp(') || func.includes('e^')) {
+                return 'y > 0';
             } else {
                 return 'Todos los números reales (-∞, ∞)';
             }
@@ -299,32 +320,33 @@
             const labels = [];
             const data = [];
             
-            for (let x = -10; x <= 10; x += 0.5) {
+            // Configurar el scope para math.js
+            const scope = {
+                x: 0
+            };
+            
+            // Intentar compilar la función primero
+            let compiledFn;
+            try {
+                compiledFn = math.compile(func);
+            } catch (e) {
+                throw new Error('La función no es válida: ' + e.message);
+            }
+            
+            // Generar puntos
+            for (let x = -10; x <= 10; x += 0.2) {
                 try {
-                    // Evaluar la función (simplificado para demostración)
-                    // En una aplicación real, usarías un parser matemático como math.js
-                    let y;
-                    const safeFunc = func.replace('^', '**')
-                                        .replace('sqrt', 'Math.sqrt')
-                                        .replace('sin', 'Math.sin')
-                                        .replace('cos', 'Math.cos')
-                                        .replace('tan', 'Math.tan')
-                                        .replace('log', 'Math.log')
-                                        .replace('abs', 'Math.abs');
+                    scope.x = x;
+                    const y = compiledFn.evaluate(scope);
                     
-                    // Evitar divisiones por cero y log(0)
-                    if ((safeFunc.includes('/x') && x === 0) || 
-                        (safeFunc.includes('Math.log') && x <= 0)) {
-                        continue;
+                    // Solo agregar puntos finitos
+                    if (isFinite(y)) {
+                        labels.push(x.toFixed(1));
+                        data.push(y);
                     }
-                    
-                    // Evaluar la función
-                    y = eval(safeFunc);
-                    
-                    labels.push(x);
-                    data.push(y);
                 } catch (e) {
-                    console.error(`Error al evaluar x=${x}:`, e);
+                    // Ignorar puntos que no se pueden evaluar
+                    continue;
                 }
             }
             
@@ -351,6 +373,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display: true,
@@ -365,6 +388,11 @@
                         tooltip: {
                             mode: 'index',
                             intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `f(${context.label}) = ${context.raw.toFixed(2)}`;
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -393,5 +421,4 @@
     </script>
 </body>
 </html>
-
 ```
