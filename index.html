@@ -2,153 +2,157 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Calculadora de Dominio y Rango</title>
+  <title>Dominio y Rango Interactivo</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-  <script src="https://cdn.plotly.com/plotly-latest.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f7f9fb;
+      background-color: #f8fafc;
       color: #333;
       margin: 0;
       padding: 2rem;
     }
     .container {
-      max-width: 800px;
+      max-width: 850px;
       margin: auto;
-      background: #fff;
+      background: #ffffff;
       border-radius: 1rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       padding: 2rem;
     }
     h1 {
-      color: #2c3e50;
+      color: #1e3a8a;
       text-align: center;
       margin-bottom: 1rem;
     }
-    label {
-      font-weight: bold;
-      display: block;
-      margin: 1rem 0 0.5rem;
+    input, button {
+      font-size: 1rem;
+      padding: 0.7rem;
+      margin-top: 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid #cbd5e1;
     }
     input {
       width: 100%;
-      padding: 0.7rem;
-      border-radius: 0.5rem;
-      border: 1px solid #ccc;
-      font-size: 1rem;
     }
     button {
-      margin-top: 1rem;
-      padding: 0.8rem 1.5rem;
-      font-size: 1rem;
-      background: #4ea1d3;
+      background-color: #3b82f6;
       color: white;
-      border: none;
-      border-radius: 0.5rem;
       cursor: pointer;
+      margin-top: 1rem;
     }
     button:hover {
-      background: #3a89b0;
+      background-color: #2563eb;
+    }
+    .output {
+      background-color: #f1f5f9;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      border-radius: 0.5rem;
     }
     #grafico {
       margin-top: 2rem;
-    }
-    .output {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: #ecf0f1;
-      border-radius: 0.5rem;
-      font-size: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Calculadora de Dominio y Rango</h1>
-    <label for="funcion">Escribe la función (Ej: f(x) = 2x + 3):</label>
-    <input id="funcion" type="text" placeholder="Ej: f(x) = 2x + 3">
-    <button onclick="graficar()">Calcular y Graficar</button>
+    <label>Escribe la función (Ej: f(x) = 1/(x-2))</label>
+    <input id="funcion" type="text" placeholder="Ejemplo: f(x) = 2x + 3">
+    <button onclick="graficar()">Graficar e Interpretar</button>
 
-    <div class="output" id="resultado"></div>
+    <div id="resultado" class="output"></div>
     <div id="grafico"></div>
   </div>
 
   <script>
     function procesarFuncion(raw) {
-      // Remueve 'f(x) =', espacios, etc.
       raw = raw.toLowerCase().replace(/\s/g, '');
-      raw = raw.replace(/^f\(x\)=/, '');
-
-      // Agrega * entre número y variable: 2x → 2*x
-      raw = raw.replace(/(\d)([a-zA-Z])/g, '$1*$2');
-
-      // Agrega * entre variable y paréntesis: x(x+1) → x*(x+1)
-      raw = raw.replace(/([a-zA-Z])\(/g, '$1*(');
-
-      // Agrega * entre paréntesis y variable: )(x+1) → )*(x+1)
-      raw = raw.replace(/\)([a-zA-Z])/g, ')*$1');
-
+      raw = raw.replace(/^f\(x\)=|^y=|^g\(x\)=/, '');
+      raw = raw.replace(/(\d)([a-zA-Z])/g, '$1*$2');       // 2x -> 2*x
+      raw = raw.replace(/([a-zA-Z])\(/g, '$1*(');           // x(x+1) -> x*(x+1)
+      raw = raw.replace(/\)([a-zA-Z])/g, ')*$1');           // )(x+1) -> )*(x+1)
       return raw;
     }
 
+    function redondear(valor) {
+      return Math.round(valor * 100) / 100;
+    }
+
     function graficar() {
-      const entrada = document.getElementById('funcion').value;
-      const resultado = document.getElementById('resultado');
+      const entrada = document.getElementById("funcion").value;
       const expr = procesarFuncion(entrada);
+      const resultado = document.getElementById("resultado");
 
       let x = [], y = [];
-      const scope = {x: 0};
-      let compiled;
+      const minX = -20, maxX = 20, step = 0.1;
+      const scope = { x: 0 };
 
+      let funcion;
       try {
-        compiled = math.compile(expr);
+        funcion = math.compile(expr);
       } catch (err) {
-        resultado.innerHTML = "<b>❌ Error:</b> No se pudo interpretar la función.";
-        Plotly.purge('grafico');
+        resultado.innerHTML = "<b>Error:</b> No se pudo interpretar la función.";
         return;
       }
-
-      const minX = -20, maxX = 20, step = 0.1;
 
       for (let xi = minX; xi <= maxX; xi += step) {
         try {
           scope.x = xi;
-          const yi = compiled.evaluate(scope);
+          const yi = funcion.evaluate(scope);
           if (isFinite(yi)) {
-            x.push(xi);
-            y.push(yi);
+            x.push(redondear(xi));
+            y.push(redondear(yi));
           }
-        } catch {
-          // saltar errores de cálculo
-        }
+        } catch {}
       }
 
-      if (x.length === 0) {
-        resultado.innerHTML = "<b>❌ Error:</b> La función no tiene valores definidos en este dominio.";
-        Plotly.purge('grafico');
+      if (x.length < 2) {
+        resultado.innerHTML = "<b>Error:</b> No se pudo graficar con suficientes puntos.";
         return;
       }
 
-      const dominio = `[${Math.min(...x).toFixed(2)}, ${Math.max(...x).toFixed(2)}]`;
-      const rango = `[${Math.min(...y).toFixed(2)}, ${Math.max(...y).toFixed(2)}]`;
+      const minY = Math.min(...y);
+      const maxY = Math.max(...y);
+      const domText = `Dominio aproximado: [${x[0]}, ${x[x.length - 1]}]`;
+      const ranText = `Rango aproximado: [${minY}, ${maxY}]`;
+
+      let interpretacion = "";
+
+      // Deducción simple de tipo de función
+      if (expr.includes("/")) {
+        interpretacion += "💡 La función tiene posibles asintotas verticales debido a divisiones.<br>";
+      }
+      if (expr.includes("sqrt") || expr.includes("log") || expr.includes("ln")) {
+        interpretacion += "💡 La función puede estar definida solo para ciertos valores (ej. positivos).<br>";
+      }
+      if (expr.includes("^2")) {
+        interpretacion += "💡 Parece una parábola: el rango puede estar limitado por un mínimo o máximo.<br>";
+      }
+      if (expr.includes("sin") || expr.includes("cos") || expr.includes("tan")) {
+        interpretacion += "💡 Función trigonométrica detectada: rango acotado y comportamiento periódico.<br>";
+      }
 
       resultado.innerHTML = `
-        <b>Dominio aproximado:</b> ${dominio}<br>
-        <b>Rango aproximado:</b> ${rango}
+        ✅ <b>Función interpretada:</b> <code>f(x) = ${expr}</code><br><br>
+        📏 <b>${domText}</b><br>
+        🎯 <b>${ranText}</b><br><br>
+        ${interpretacion}
       `;
 
-      Plotly.newPlot('grafico', [{
+      Plotly.newPlot("grafico", [{
         x: x,
         y: y,
-        mode: 'lines',
-        line: { color: '#3498db' }
+        mode: "lines",
+        line: { color: "#2563eb" }
       }], {
-        title: 'Gráfica de la función',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'f(x)' },
-        margin: { t: 40 },
-      }, {scrollZoom: true});
+        title: "Gráfica de la función",
+        xaxis: { title: "x" },
+        yaxis: { title: "f(x)" },
+        margin: { t: 40 }
+      }, { scrollZoom: true });
     }
   </script>
 </body>
