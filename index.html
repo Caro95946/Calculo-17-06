@@ -25,7 +25,7 @@
     }
     
     body {
-      background: linear-gradient(135deg, #ddbfff 0%, #ebd9ff 100%);
+      background: linear-gradient(135deg, #f9f5fa 0%, #f9f5fa 100%);
       min-height: 100vh;
       padding: 2rem;
       color: var(--dark);
@@ -194,27 +194,24 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.12.0/math.min.js"></script>
   <script>
     let functionChart = null;
 
-    // Normalizar la expresión para math.js
     function normalizeExpression(expr) {
       return expr
         .toLowerCase()
-        .replace(/sen/g, 'sin') // sen → sin
-        .replace(/\^/g, '**')   // ^ → **
-        .replace(/√/g, 'sqrt')  // √ → sqrt
-        .replace(/\s+/g, '')    // quitar espacios
-        .replace(/,/g, '.')     // coma decimal
-        .replace(/(\d)([a-z])/g, '$1*$2') 
-        .replace(/([a-z])(\d)/g, '$1*$2') 
+        .replace(/sen/g, 'sin')
+        .replace(/\^/g, '**')
+        .replace(/√/g, 'sqrt')
+        .replace(/\s+/g, '')
+        .replace(/,/g, '.')
+        .replace(/(\d)([a-z])/g, '$1*$2')
+        .replace(/([a-z])(\d)/g, '$1*$2')
         .replace(/(\))(\()/g, '$1*$2')
         .replace(/(\d)(\()/g, '$1*$2')
         .replace(/(\))([a-z])/g, '$1*$2');
     }
 
-    // Evaluar función con math.js
     function evaluateFunction(func, x) {
       const expr = normalizeExpression(func);
       const scope = { x: x };
@@ -225,16 +222,16 @@
       }
     }
 
-    // Validar función
+    // Validar función: al menos un punto válido
     function isValidFunction(func) {
-      const testValues = [-1, 0, 1, 2];
+      const testValues = [-10, -1, 0, 1, 10];
       for (const val of testValues) {
-        if (isNaN(evaluateFunction(func, val))) return false;
+        const y = evaluateFunction(func, val);
+        if (!isNaN(y) && isFinite(y)) return true;
       }
-      return true;
+      return false;
     }
 
-    // Calcular dominio (simplificado)
     function calculateDomain(func) {
       const expr = normalizeExpression(func);
       if (expr.includes('sqrt') || expr.includes('log')) {
@@ -246,7 +243,6 @@
       }
     }
 
-    // Calcular rango (simplificado)
     function calculateRange(func) {
       const expr = normalizeExpression(func);
       if (expr.includes('x**2')) {
@@ -260,7 +256,6 @@
       }
     }
 
-    // Graficar función
     function plotFunction(func) {
       const ctx = document.getElementById('function-chart').getContext('2d');
 
@@ -273,6 +268,16 @@
           labels.push(x.toFixed(2));
           data.push(y);
         }
+      }
+
+      const errorElement = document.getElementById('error-message');
+      if (data.length === 0) {
+        errorElement.style.display = 'block';
+        errorElement.textContent = 'La función no puede graficarse con los valores actuales.';
+        if (functionChart) functionChart.destroy();
+        return;
+      } else {
+        errorElement.style.display = 'none';
       }
 
       if (functionChart) {
