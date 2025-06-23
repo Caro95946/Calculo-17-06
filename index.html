@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculadora de Dominio y Rango Mejorada</title>
+  <title>Calculadora de Dominio y Rango</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.12.0/math.min.js"></script>
   <style>
@@ -16,21 +16,21 @@
       --success: #f5dbff;
       --warning: #7dffcf;
     }
-    
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    
+
     body {
-      background: linear-gradient(135deg, #f9f5fa 0%, #f9f5fa 100%);
+      background: linear-gradient(135deg, #ddbfff 0%, #ebd9ff 100%);
       min-height: 100vh;
       padding: 2rem;
       color: var(--dark);
     }
-    
+
     .container {
       max-width: 1000px;
       margin: 0 auto;
@@ -39,39 +39,39 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       overflow: hidden;
     }
-    
+
     header {
       background: linear-gradient(to right, var(--primary), var(--secondary));
       color: white;
       padding: 1.5rem 2rem;
       text-align: center;
     }
-    
+
     h1 {
       font-size: 2rem;
       margin-bottom: 0.5rem;
     }
-    
+
     .subtitle {
       opacity: 0.9;
       font-weight: 300;
     }
-    
+
     .calculator {
       padding: 2rem;
     }
-    
+
     .input-group {
       margin-bottom: 1.5rem;
     }
-    
+
     label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
       color: var(--secondary);
     }
-    
+
     input {
       width: 100%;
       padding: 0.8rem 1rem;
@@ -80,13 +80,13 @@
       font-size: 1rem;
       transition: all 0.3s ease;
     }
-    
+
     input:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
     }
-    
+
     button {
       background: var(--accent);
       color: white;
@@ -101,20 +101,20 @@
       width: 100%;
       margin-top: 1rem;
     }
-    
+
     button:hover {
       background: #de334f;
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(248, 37, 133, 0.3);
     }
-    
+
     .results {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
       margin-top: 2rem;
     }
-    
+
     .result-card {
       background: white;
       border-radius: 10px;
@@ -122,18 +122,18 @@
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
       border-top: 4px solid var(--primary);
     }
-    
+
     .result-card h3 {
       color: var(--primary);
       margin-bottom: 1rem;
       font-size: 1.2rem;
     }
-    
+
     .result-value {
       font-size: 1.1rem;
       line-height: 1.6;
     }
-    
+
     .chart-container {
       margin-top: 2rem;
       background: white;
@@ -141,19 +141,19 @@
       padding: 1.5rem;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     }
-    
+
     .error {
       color: #d62828;
       margin-top: 0.5rem;
       font-size: 0.9rem;
       display: none;
     }
-    
+
     @media (max-width: 768px) {
       .results {
         grid-template-columns: 1fr;
       }
-      
+
       body {
         padding: 1rem;
       }
@@ -170,7 +170,7 @@
     <div class="calculator">
       <div class="input-group">
         <label for="function-input">Ingresa la función (usa 'x' como variable):</label>
-        <input type="text" id="function-input" placeholder="Ej: x^2 + 2x + 1" />
+        <input type="text" id="function-input" placeholder="Ej: √x, x^2 + 2x + 1, sen(x), log(x)" />
         <div class="error" id="error-message">Por favor ingresa una función válida</div>
       </div>
 
@@ -181,7 +181,6 @@
           <h3>Dominio</h3>
           <div class="result-value" id="domain-result">Ingresa una función para calcular</div>
         </div>
-
         <div class="result-card">
           <h3>Rango</h3>
           <div class="result-value" id="range-result">Ingresa una función para calcular</div>
@@ -202,7 +201,8 @@
         .toLowerCase()
         .replace(/sen/g, 'sin')
         .replace(/\^/g, '**')
-        .replace(/√/g, 'sqrt')
+        .replace(/√\(([^)]+)\)/g, 'sqrt($1)')
+        .replace(/√([a-z0-9.]+)/g, 'sqrt($1)')
         .replace(/\s+/g, '')
         .replace(/,/g, '.')
         .replace(/(\d)([a-z])/g, '$1*$2')
@@ -222,7 +222,6 @@
       }
     }
 
-    // Validar función: al menos un punto válido
     function isValidFunction(func) {
       const testValues = [-10, -1, 0, 1, 10];
       for (const val of testValues) {
@@ -235,7 +234,7 @@
     function calculateDomain(func) {
       const expr = normalizeExpression(func);
       if (expr.includes('sqrt') || expr.includes('log')) {
-        return 'x ≥ 0 (o dominio restringido según función)';
+        return 'x ≥ 0 (o dominio restringido según la función)';
       } else if (expr.includes('/x')) {
         return 'x ≠ 0';
       } else {
@@ -246,7 +245,7 @@
     function calculateRange(func) {
       const expr = normalizeExpression(func);
       if (expr.includes('x**2')) {
-        return 'y ≥ 0 (parábola con mínimo en 0)';
+        return 'y ≥ 0';
       } else if (expr.includes('sin') || expr.includes('cos')) {
         return '-1 ≤ y ≤ 1';
       } else if (expr.includes('sqrt') || expr.includes('abs')) {
@@ -280,9 +279,7 @@
         errorElement.style.display = 'none';
       }
 
-      if (functionChart) {
-        functionChart.destroy();
-      }
+      if (functionChart) functionChart.destroy();
 
       functionChart = new Chart(ctx, {
         type: 'line',
