@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <title>Calculadora de Dominio y Rango</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.plotly.com/plotly-latest.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f9fafb;
+      background-color: #f7f9fb;
       color: #333;
       margin: 0;
       padding: 2rem;
@@ -16,7 +16,7 @@
     .container {
       max-width: 800px;
       margin: auto;
-      background: #ffffff;
+      background: #fff;
       border-radius: 1rem;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
       padding: 2rem;
@@ -66,8 +66,8 @@
 <body>
   <div class="container">
     <h1>Calculadora de Dominio y Rango</h1>
-    <label for="funcion">Escribe la función (usa "x" como variable):</label>
-    <input id="funcion" type="text" placeholder="Ej: sin(x), x^2, 1/(x-2), ln(x), etc.">
+    <label for="funcion">Escribe la función (Ej: f(x) = 2x + 3):</label>
+    <input id="funcion" type="text" placeholder="Ej: f(x) = 2x + 3">
     <button onclick="graficar()">Calcular y Graficar</button>
 
     <div class="output" id="resultado"></div>
@@ -75,12 +75,40 @@
   </div>
 
   <script>
+    function procesarFuncion(raw) {
+      // Remueve 'f(x) =', espacios, etc.
+      raw = raw.toLowerCase().replace(/\s/g, '');
+      raw = raw.replace(/^f\(x\)=/, '');
+
+      // Agrega * entre número y variable: 2x → 2*x
+      raw = raw.replace(/(\d)([a-zA-Z])/g, '$1*$2');
+
+      // Agrega * entre variable y paréntesis: x(x+1) → x*(x+1)
+      raw = raw.replace(/([a-zA-Z])\(/g, '$1*(');
+
+      // Agrega * entre paréntesis y variable: )(x+1) → )*(x+1)
+      raw = raw.replace(/\)([a-zA-Z])/g, ')*$1');
+
+      return raw;
+    }
+
     function graficar() {
-      const expr = document.getElementById('funcion').value;
+      const entrada = document.getElementById('funcion').value;
       const resultado = document.getElementById('resultado');
+      const expr = procesarFuncion(entrada);
+
       let x = [], y = [];
       const scope = {x: 0};
-      const compiled = math.compile(expr);
+      let compiled;
+
+      try {
+        compiled = math.compile(expr);
+      } catch (err) {
+        resultado.innerHTML = "<b>❌ Error:</b> No se pudo interpretar la función.";
+        Plotly.purge('grafico');
+        return;
+      }
+
       const minX = -20, maxX = 20, step = 0.1;
 
       for (let xi = minX; xi <= maxX; xi += step) {
@@ -91,13 +119,13 @@
             x.push(xi);
             y.push(yi);
           }
-        } catch (err) {
-          // saltar puntos inválidos
+        } catch {
+          // saltar errores de cálculo
         }
       }
 
       if (x.length === 0) {
-        resultado.innerHTML = "<b>❌ Error:</b> No se pudo evaluar la función. Revisa la sintaxis.";
+        resultado.innerHTML = "<b>❌ Error:</b> La función no tiene valores definidos en este dominio.";
         Plotly.purge('grafico');
         return;
       }
@@ -116,11 +144,10 @@
         mode: 'lines',
         line: { color: '#3498db' }
       }], {
-        margin: { t: 10 },
         title: 'Gráfica de la función',
         xaxis: { title: 'x' },
         yaxis: { title: 'f(x)' },
-        responsive: true
+        margin: { t: 40 },
       }, {scrollZoom: true});
     }
   </script>
